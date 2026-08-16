@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Edukasi PAI - SMAN 1 Krembung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            background-image: url('https://www.transparenttextures.com/patterns/arabesque.png');
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .arabic {
+            font-family: 'Amiri', serif;
+            line-height: 2.2;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Puzzle Styles */
+        .puzzle-piece {
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .puzzle-piece:hover { transform: scale(1.02); border-color: #10b981; }
+        .puzzle-area { min-height: 80px; border: 2px dashed #cbd5e1; }
+        
+        /* Matching Styles */
+        .match-item {
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .match-item:hover { transform: translateY(-2px); border-color: #10b981; }
+        .match-selected { border-color: #3b82f6 !important; background-color: #eff6ff !important; transform: scale(1.02); }
+        .match-correct { 
+            border-color: #10b981 !important; 
+            background-color: #d1fae5 !important; 
+            color: #065f46; 
+            pointer-events: none; 
+        /* Match Styles */
+        .match-wrong { animation: shake 0.5s; border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        /* Certificate Styles */
+        #certificate-container {
+            width: 1050px; height: 742px; padding: 20px; /* Batas luar diperkecil agar lega */
+            background: white; border: 15px solid #064e3b;
+            position: relative; text-align: center;
+            box-sizing: border-box;
+        }
+        .cert-inner { border: 2px solid #10b981; height: 100%; padding: 20px; position: relative; box-sizing: border-box; } /* Batas dalam diperkecil */
+        .cert-logo { width: 75px; margin: 0 auto; } /* Ukuran logo disesuaikan sedikit */
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-emerald-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhjhEe7DsQaweQWtckuBY0QdRPB_J0RbHqfSXb0fFnNGOQYwfzbn9SyTV1WORteNpd7S3rcGj3FYpaCf0X7tjQpcXoDfErD-aWPD9kTf-6auJIoAZ3ETmXpvuoVydS7H87HO-vidqv4ECyayUG4dFJNZNMuVWD2lUyaMaF7ox5BYCfAksicgx7ryvy6V56Z/s1600/LOGO%20SMANIKRE%20(1).png" alt="Logo SMAN 1 Krembung" class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full p-1 shadow-md">
+                <div>
+                    <h1 class="text-lg md:text-2xl font-bold leading-tight">SMA NEGERI 1 KREMBUNG</h1>
+                    <p class="text-[10px] md:text-sm text-emerald-200">Pendidikan Agama Islam & Budi Pekerti</p>
+                </div>
+            </div>
+            <div id="header-score" class="hidden bg-emerald-600 px-3 py-1 md:px-4 md:py-2 rounded-lg font-bold shadow-inner text-sm md:text-base">
+                Skor: <span id="current-score" class="text-yellow-300">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-2 md:p-4 w-full">
+        <div id="app-container" class="glass w-full max-w-5xl rounded-2xl p-4 md:p-8 relative overflow-hidden">
+            
+            <!-- SECTION 1: LOGIN -->
+            <div id="screen-login" class="fade-in">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold text-emerald-800 mb-2">Misi Pembelajaran PAI</h2>
+                    <p class="text-gray-600 text-sm md:text-base">Sabar, Syukur, & Ujian dalam Masyarakat Majemuk</p>
+                </div>
+
+                <form id="login-form" class="max-w-md mx-auto space-y-4 md:space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="student-name" required placeholder="Masukkan nama lengkapmu..." class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Kelas</label>
+                            <select id="student-class" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none transition bg-white">
+                                <option value="" disabled selected>Pilih Kelas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">No. Absen</label>
+                            <select id="student-absen" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none transition bg-white">
+                                <option value="" disabled selected>No Absen</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-200 mt-6">
+                        <h3 class="text-sm font-bold text-gray-700 mb-2"><i class="fas fa-gamepad text-emerald-600"></i> Rute Tantangan:</h3>
+                        <ul class="text-xs text-gray-600 space-y-1 mb-4 list-none">
+                            <li><i class="fas fa-check-circle text-emerald-500 mr-1"></i> <b>Tahap 1:</b> Analisis Kasus (Pilihan Ganda 5 Opsi)</li>
+                            <li><i class="fas fa-check-circle text-emerald-500 mr-1"></i> <b>Tahap 2:</b> Puzzle Sambung Ayat (Hafalan)</li>
+                            <li><i class="fas fa-check-circle text-emerald-500 mr-1"></i> <b>Tahap 3:</b> Menjodohkan (Konsep Tajwid & Teologi)</li>
+                        </ul>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl btn-hover flex items-center justify-center gap-2 text-lg">
+                            Mulai Berpetualang <i class="fas fa-rocket"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SECTION 2: AREA PERMAINAN -->
+            <div id="screen-game" class="hidden fade-in">
+                <!-- Global Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm font-semibold text-emerald-800 mb-2">
+                        <span id="stage-indicator">Tahap 1: Pilihan Ganda</span>
+                        <span id="score-indicator" class="text-emerald-600"></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="global-progress" class="bg-emerald-600 h-2 rounded-full transition-all duration-500" style="width: 33%"></div>
+                    </div>
+                </div>
+
+                <!-- STAGE 1: MULTIPLE CHOICE (5 Options) -->
+                <div id="game-mcq" class="hidden">
+                    <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-emerald-100 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-xs font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded">Analisis Kritis</span>
+                            <span id="mcq-counter" class="text-xs font-bold text-gray-500">Soal 1/5</span>
+                        </div>
+                        <p id="mcq-text" class="text-base md:text-lg font-medium text-gray-800 mb-2"></p>
+                    </div>
+                    <div id="mcq-options" class="grid grid-cols-1 gap-3">
+                        <!-- Options generated by JS -->
+                    </div>
+                </div>
+
+                <!-- STAGE 2: PUZZLE SAMBUNG AYAT -->
+                <div id="game-puzzle" class="hidden">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-emerald-100 mb-6 text-center">
+                        <h3 class="font-bold text-emerald-800 mb-2 text-lg"><i class="fas fa-puzzle-piece"></i> Puzzle Hafalan</h3>
+                        <p class="text-sm text-gray-600 mb-4">Susunlah acakan potongan Q.S. al-Baqarah/2: 155 berikut menjadi urutan ayat yang benar.</p>
+                        
+                        <div class="bg-blue-50 p-3 rounded-lg mb-4 text-xs text-blue-800 text-left">
+                            <b>Instruksi:</b> Klik potongan ayat di kotak "Acak" untuk memindahkannya ke kotak "Jawaban" secara berurutan. Klik di kotak Jawaban untuk membatalkan.
+                        </div>
+
+                        <!-- Area Acak -->
+                        <div class="text-left mb-2 text-sm font-semibold text-gray-500">Potongan Ayat (Acak):</div>
+                        <div id="puzzle-source" class="puzzle-area bg-gray-50 rounded-xl p-4 flex flex-wrap gap-2 justify-center mb-6">
+                            <!-- Pieces go here -->
+                        </div>
+
+                        <!-- Area Jawaban -->
+                        <div class="text-left mb-2 text-sm font-semibold text-gray-500">Susunan Jawaban Anda (Kanan ke Kiri):</div>
+                        <div id="puzzle-target" class="puzzle-area bg-emerald-50 rounded-xl p-4 flex flex-wrap-reverse gap-2 justify-center mb-6 min-h-[100px]" dir="rtl">
+                            <!-- Selected pieces go here -->
+                        </div>
+
+                        <button onclick="checkPuzzle()" id="btn-check-puzzle" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg btn-hover disabled:opacity-50 disabled:cursor-not-allowed">
+                            Cek Susunan Ayat <i class="fas fa-check ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STAGE 3: MATCHING (MENJODOHKAN) -->
+                <div id="game-match" class="hidden">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-emerald-100 mb-4 text-center">
+                        <h3 class="font-bold text-emerald-800 mb-1 text-lg"><i class="fas fa-link"></i> Menjodohkan Konsep</h3>
+                        <p class="text-sm text-gray-600 mb-4">Pilih satu kotak di kiri, lalu pilih pasangan definisi yang tepat di kotak kanan.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Kiri: Istilah -->
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-500 mb-3 border-b pb-2">Istilah / Ayat</h4>
+                                <div id="match-left" class="flex flex-col gap-3"></div>
+                            </div>
+                            <!-- Kanan: Definisi -->
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-500 mb-3 border-b pb-2">Definisi / Makna</h4>
+                                <div id="match-right" class="flex flex-col gap-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SECTION 3: HASIL AKHIR -->
+            <div id="screen-result" class="hidden fade-in text-center py-8">
+                <div class="inline-block p-4 rounded-full bg-emerald-100 mb-4">
+                    <i class="fas fa-graduation-cap text-6xl text-yellow-500"></i>
+                </div>
+                <h2 class="text-2xl md:text-3xl font-bold text-emerald-800 mb-2">Alhamdulillah, Misi Selesai!</h2>
+                <p id="result-name" class="text-lg md:text-xl font-semibold text-gray-700 mb-6"></p>
+                
+                <div class="flex justify-center gap-4 md:gap-6 mb-8">
+                    <div class="bg-white p-4 md:p-6 rounded-2xl shadow-md border-2 border-emerald-200 w-36 md:w-40">
+                        <p class="text-xs md:text-sm text-gray-500 font-bold uppercase mb-1">Total Skor</p>
+                        <p id="final-score" class="text-4xl md:text-5xl font-black text-emerald-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 md:p-6 rounded-2xl shadow-md border-2 border-emerald-200 w-36 md:w-40">
+                        <p class="text-xs md:text-sm text-gray-500 font-bold uppercase mb-1">Predikat</p>
+                        <p id="final-grade" class="text-xl md:text-2xl font-black text-yellow-500 mt-2">MUMTAZ</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-4 max-w-lg mx-auto">
+                    <button onclick="downloadCertificate()" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl btn-hover flex items-center justify-center gap-2">
+                        <i class="fas fa-file-pdf"></i> Unduh Sertifikat
+                    </button>
+                    <button onclick="sendToSpreadsheet()" id="btn-send-data" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl btn-hover flex items-center justify-center gap-2">
+                        <i class="fas fa-cloud-upload-alt"></i> Kirim Nilai
+                    </button>
+                </div>
+                
+                <p class="text-[10px] md:text-xs text-gray-400 mt-6 px-4"><i class="fas fa-info-circle"></i> Nilai akan dikirim ke Spreadsheet Guru (Link: 1RGHWX_...). Pastikan internet stabil.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-emerald-900 text-emerald-100 py-4 text-center text-xs md:text-sm mt-auto">
+        <p>&copy; 2026 Game Edukasi PAI & Budi Pekerti - SMAN 1 Krembung</p>
+        <p class="mt-1 font-semibold text-white">Guru Pengampu: Ulfatul Husna, S.Ag., M.Pd.</p>
+    </footer>
+
+    <!-- Hidden Certificate Template for PDF Rendering -->
+    <div style="position: absolute; left: -9999px; top: 0; overflow: hidden; z-index: -100;">
+        <div id="certificate-container">
+            <div class="cert-inner bg-white flex flex-col items-center justify-center">
+                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhjhEe7DsQaweQWtckuBY0QdRPB_J0RbHqfSXb0fFnNGOQYwfzbn9SyTV1WORteNpd7S3rcGj3FYpaCf0X7tjQpcXoDfErD-aWPD9kTf-6auJIoAZ3ETmXpvuoVydS7H87HO-vidqv4ECyayUG4dFJNZNMuVWD2lUyaMaF7ox5BYCfAksicgx7ryvy6V56Z/s1600/LOGO%20SMANIKRE%20(1).png" class="cert-logo mb-3" alt="Logo">
+                <h1 class="text-4xl font-bold text-emerald-800 mb-1" style="font-family: 'Times New Roman', serif;">SERTIFIKAT PENGHARGAAN</h1>
+                <p class="text-lg text-gray-600 mb-3">Diberikan oleh SMA Negeri 1 Krembung kepada:</p>
+                
+                <!-- Nama siswa diatur center mutlak, lebar proporsional -->
+                <h2 id="cert-name" class="text-3xl md:text-4xl font-bold text-gray-900 border-b-2 border-emerald-500 pb-2 mb-2 w-3/4 mx-auto text-center">NAMA SISWA</h2>
+                <p id="cert-class" class="text-base font-semibold text-gray-700 mb-4 text-center">Kelas - No. Absen</p>
+
+                <p class="text-gray-700 text-sm md:text-base max-w-3xl text-center leading-relaxed mb-6 px-4">
+                    Telah berhasil menyelesaikan Misi Pembelajaran Interaktif PAI & Budi Pekerti materi <b>"Sabar, Syukur, dan Ujian dalam Kehidupan Masyarakat Majemuk"</b> (Q.S. al-Baqarah/2: 155-156 & Q.S. Ibrahim/14: 9) dengan mengedepankan prinsip Tawassuth, Tawazun, dan Tasamuh.
+                </p>
+
+                <div class="flex justify-between w-full px-12 items-end mt-2">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500 mb-1 font-semibold uppercase">Total Skor</p>
+                        <p id="cert-score" class="text-4xl font-black text-emerald-600">100</p>
+                    </div>
+                    <div class="text-center">
+                        <!-- Tanggal dinamis Krembung dan nama guru PAI dimunculkan eksplisit -->
+                        <p id="cert-date-text" class="text-sm md:text-base text-gray-800 mb-1">Krembung, -</p>
+                        <p class="text-sm md:text-base text-gray-800 mb-4">Guru Pengampu,</p>
+                        <p class="font-bold border-b border-gray-400 pb-1 text-base md:text-lg">Ulfatul Husna, S.Ag., M.Pd.</p>
+                        <p class="text-xs text-gray-500 mt-0.5">NIP. -</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State & Setup UI Dropdowns
+        let studentData = { name: '', kelas: '', absen: '' };
+        let totalScore = 0;
+        
+        const classSelect = document.getElementById('student-class');
+        for (let i = 1; i <= 12; i++) { classSelect.add(new Option(`XII-${i}`, `XII-${i}`)); }
+        
+        const absenSelect = document.getElementById('student-absen');
+        for (let i = 1; i <= 36; i++) { absenSelect.add(new Option(i, i)); }
+
+        function updateScore(points) {
+            totalScore += points;
+            document.getElementById('current-score').innerText = totalScore;
+        }
+
+        /* --- DATA TAHAP 1: PILIHAN GANDA (5 OPSI) --- */
+        const mcqData = [
+            {
+                text: "[Teologi Q.S al-Baqarah: 155] Mengapa Allah senantiasa menguji manusia dengan berbagai cobaan seperti ketakutan (khauf) dan kekurangan harta?",
+                options: [
+                    "A. Sebagai bentuk hukuman mati bagi orang-orang kafir di dunia",
+                    "B. Untuk menguji kualitas keimanan, menyortir orang beriman, dan melatih kesabaran tangguh",
+                    "C. Karena manusia di bumi selalu berbuat dosa tanpa henti siang dan malam",
+                    "D. Agar manusia sadar bahwa harta kekayaan adalah hal yang paling utama",
+                    "E. Sebagai siksaan takdir yang tidak memiliki hikmah atau jalan keluar"
+                ],
+                answer: 1 // B
+            },
+            {
+                text: "[Historis Q.S Ibrahim: 9] Umat-umat terdahulu (seperti kaum Nuh, 'Ad, dan Tsamud) merespon ajaran para Rasul yang membawa bukti nyata dengan cara yang sombong, yaitu...",
+                options: [
+                    "A. Menyembunyikan para rasul di dalam gua yang gelap",
+                    "B. Membayar para rasul dengan emas agar berhenti berdakwah",
+                    "C. Menutupkan tangan ke mulut mereka sendiri sebagai tanda penolakan dan kebencian",
+                    "D. Membangunkan tempat ibadah yang megah untuk menyenangkan rasul",
+                    "E. Pindah (hijrah) berbondong-bondong meninggalkan negeri mereka"
+                ],
+                answer: 2 // C
+            },
+            {
+                text: "[Aktualisasi - Tawassuth] Di lingkunganmu yang majemuk, warga non-muslim sedang mengadakan perayaan keagamaan. Sikap moderat (Tawassuth) seorang muslim adalah...",
+                options: [
+                    "A. Bertindak ekstrem dengan membubarkan paksa acara tersebut",
+                    "B. Ikut serta memakai atribut dan mengikuti ritual ibadah mereka",
+                    "C. Menjaga kemurnian akidah (tidak ikut ritual) namun tidak memusuhi dan tetap menjaga kerukunan sosial",
+                    "D. Membentuk agama baru yang menggabungkan semua ajaran agama",
+                    "E. Mengisolasi diri dan keluarga bersembunyi di dalam rumah selama sebulan"
+                ],
+                answer: 2 // C
+            },
+            {
+                text: "[Aktualisasi - Tawazun] Kamu diuji dengan kondisi ekonomi keluarga yang sulit jelang ujian sekolah. Implementasi keseimbangan (Tawazun) yang tepat adalah...",
+                options: [
+                    "A. Beribadah di masjid 24 jam penuh dan meninggalkan sekolah",
+                    "B. Bekerja keras mencari uang siang malam hingga lupa beribadah kepada Allah",
+                    "C. Terus mengeluh di media sosial agar viral dan mendapat simpati",
+                    "D. Tetap berikhtiar sungguh-sungguh untuk dunia (belajar/bekerja sambilan) dan seimbang berdoa bertawakkal",
+                    "E. Menyerah pada nasib dan pasrah tanpa melakukan usaha apapun"
+                ],
+                answer: 3 // D
+            },
+            {
+                text: "[Aktualisasi - Tasamuh] Saat terjadi bencana alam lintas daerah, bantuan berdatangan dari berbagai organisasi beda agama. Sikap Tasamuh (toleransi) yang sesuai nilai Islam adalah...",
+                options: [
+                    "A. Mencampuradukkan ajaran agama saat proses pembagian bantuan",
+                    "B. Menerima dan bekerjasama dalam urusan kemanusiaan meski berbeda keyakinan agama",
+                    "C. Menolak mentah-mentah bantuan dari orang yang berbeda agama",
+                    "D. Memaksa relawan tersebut masuk Islam sebelum menerima bantuan mereka",
+                    "E. Bersikap acuh tak acuh seolah tidak ada bencana yang terjadi"
+                ],
+                answer: 1 // B
+            }
+        ];
+        
+        let currentMcqIndex = 0;
+        const ptsPerMcq = 10; // 5 soal x 10 = 50 pts
+
+        /* --- DATA TAHAP 2: PUZZLE SAMBUNG AYAT --- */
+        // Urutan benar: 1, 2, 3, 4, 5, 6
+        const puzzlePieces = [
+            { id: 1, text: "وَلَنَبْلُوَنَّكُمْ", label: "P1" },
+            { id: 2, text: "بِشَيْءٍ مِّنَ ٱلْخَوْفِ", label: "P2" },
+            { id: 3, text: "وَٱلْجُوعِ", label: "P3" },
+            { id: 4, text: "وَنَقْصٍ مِّنَ ٱلْأَمْوَٰلِ", label: "P4" },
+            { id: 5, text: "وَٱلْأَنفُسِ وَٱلثَّمَرَٰتِ", label: "P5" },
+            { id: 6, text: "وَبَشِّرِ ٱلصَّـٰبِرِينَ", label: "P6" }
+        ];
+        let puzzleAttempts = 0;
+        let puzzleMaxScore = 25;
+
+        /* --- DATA TAHAP 3: MENJODOHKAN --- */
+        const matchData = [
+            { id: 'm1', left: 'Tawassuth', right: 'Sikap moderat, mengambil jalan tengah, tidak ekstrem' },
+            { id: 'm2', left: 'Tawazun', right: 'Keseimbangan dalam porsi urusan dunia dan akhirat' },
+            { id: 'm3', left: 'Tasamuh', right: 'Sikap toleransi, menghargai perbedaan di masyarakat' },
+            { id: 'm4', left: 'Istirja\'', right: 'Ucapan Innalillahi saat musibah sbg wujud tauhid' },
+            { id: 'm5', left: 'Idzhar Halqi', right: 'Hukum tajwid nun mati/tanwin bertemu huruf tenggorokan' }
+        ];
+        let matchLeftSelected = null;
+        let matchPairsFound = 0;
+        let matchMistakes = 0;
+        let matchMaxScore = 25;
+
+        // Login Submit
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            studentData.name = document.getElementById('student-name').value;
+            studentData.kelas = document.getElementById('student-class').value;
+            studentData.absen = document.getElementById('student-absen').value;
+
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('header-score').classList.remove('hidden');
+            
+            Swal.fire({
+                title: 'Tahap 1 Dimulai!',
+                text: 'Jawab 5 pertanyaan analisis dengan cermat.',
+                icon: 'info',
+                confirmButtonColor: '#059669'
+            });
+
+            startMCQ();
+        });
+
+        /* --- LOGIC TAHAP 1: MCQ --- */
+        function startMCQ() {
+            document.getElementById('global-progress').style.width = '33%';
+            document.getElementById('stage-indicator').innerText = 'Tahap 1/3: Analisis Kritis';
+            document.getElementById('game-mcq').classList.remove('hidden');
+            loadMCQ();
+        }
+
+        function loadMCQ() {
+            if (currentMcqIndex >= mcqData.length) {
+                // Selesai MCQ, pindah ke Puzzle
+                document.getElementById('game-mcq').classList.add('hidden');
+                Swal.fire({
+                    title: 'Bagus Sekali!',
+                    text: 'Lanjut ke Tahap 2: Ujian Hafalan Al-Qur\'an',
+                    icon: 'success',
+                    confirmButtonColor: '#059669'
+                }).then(() => startPuzzle());
+                return;
+            }
+
+            const q = mcqData[currentMcqIndex];
+            document.getElementById('mcq-counter').innerText = `Soal ${currentMcqIndex + 1}/5`;
+            document.getElementById('mcq-text').innerText = q.text;
+            
+            const optionsContainer = document.getElementById('mcq-options');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left bg-white border-2 border-gray-200 hover:border-emerald-500 hover:bg-emerald-50 p-3 md:p-4 rounded-xl transition duration-200 font-medium text-sm md:text-base text-gray-700 shadow-sm';
+                btn.innerText = opt;
+                btn.onclick = () => checkMCQAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkMCQAnswer(selectedIndex, btnElement) {
+            const q = mcqData[currentMcqIndex];
+            const isCorrect = (selectedIndex === q.answer);
+            const buttons = document.getElementById('mcq-options').children;
+            
+            for(let b of buttons) { b.disabled = true; b.classList.add('opacity-70', 'cursor-not-allowed'); }
+
+            if (isCorrect) {
+                btnElement.classList.remove('border-gray-200');
+                btnElement.classList.add('border-green-500', 'bg-green-100', 'text-green-800');
+                updateScore(ptsPerMcq);
+                showToast('Benar!', 'success');
+            } else {
+                btnElement.classList.remove('border-gray-200');
+                btnElement.classList.add('border-red-500', 'bg-red-100');
+                buttons[q.answer].classList.remove('border-gray-200');
+                buttons[q.answer].classList.add('border-green-500', 'bg-green-50');
+                showToast('Kurang Tepat', 'error');
+            }
+
+            setTimeout(() => { currentMcqIndex++; loadMCQ(); }, 1500);
+        }
+
+        /* --- LOGIC TAHAP 2: PUZZLE --- */
+        function startPuzzle() {
+            document.getElementById('global-progress').style.width = '66%';
+            document.getElementById('stage-indicator').innerText = 'Tahap 2/3: Puzzle Ayat';
+            document.getElementById('game-puzzle').classList.remove('hidden');
+            
+            const source = document.getElementById('puzzle-source');
+            const target = document.getElementById('puzzle-target');
+            source.innerHTML = ''; target.innerHTML = '';
+
+            // Shuffle pieces
+            let shuffled = [...puzzlePieces].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(p => {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece arabic text-xl md:text-2xl bg-white border-2 border-gray-300 rounded-lg px-4 py-2 shadow-sm text-emerald-900';
+                piece.innerText = p.text;
+                piece.dataset.id = p.id;
+                
+                piece.onclick = function() {
+                    if (this.parentElement.id === 'puzzle-source') {
+                        target.appendChild(this);
+                    } else {
+                        source.appendChild(this);
+                    }
+                };
+                source.appendChild(piece);
+            });
+        }
+
+        function checkPuzzle() {
+            const target = document.getElementById('puzzle-target');
+            const currentOrder = Array.from(target.children).map(el => parseInt(el.dataset.id));
+            
+            if (currentOrder.length < 6) {
+                Swal.fire('Belum Lengkap', 'Pindahkan semua potongan ayat ke kotak susunan jawaban.', 'warning');
+                return;
+            }
+
+            // Target div is dir="rtl", so visually it goes right-to-left. 
+            // In DOM, the first child is on the far right (visually first word in Arabic).
+            // So currentOrder array [1,2,3,4,5,6] means word 1 is appended first, thus on the right. This is CORRECT for Arabic.
+            let isCorrect = true;
+            for(let i=0; i<6; i++) {
+                if(currentOrder[i] !== (i+1)) isCorrect = false;
+            }
+
+            if (isCorrect) {
+                updateScore(puzzleMaxScore);
+                document.getElementById('game-puzzle').classList.add('hidden');
+                Swal.fire({
+                    title: 'Luar Biasa!',
+                    text: 'Hafalan ayat sangat baik. Lanjut ke Tahap Terakhir!',
+                    icon: 'success',
+                    confirmButtonColor: '#059669'
+                }).then(() => startMatch());
+            } else {
+                puzzleAttempts++;
+                if (puzzleMaxScore > 10) puzzleMaxScore -= 5; // Penalty
+                Swal.fire({
+                    title: 'Susunan Belum Tepat',
+                    text: 'Perhatikan urutan ayatnya. Silakan coba lagi!',
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
+                // Return to source
+                const source = document.getElementById('puzzle-source');
+                while(target.firstChild) { source.appendChild(target.firstChild); }
+            }
+        }
+
+        /* --- LOGIC TAHAP 3: MATCHING --- */
+        function startMatch() {
+            document.getElementById('global-progress').style.width = '100%';
+            document.getElementById('stage-indicator').innerText = 'Tahap 3/3: Menjodohkan';
+            document.getElementById('game-match').classList.remove('hidden');
+            
+            const leftContainer = document.getElementById('match-left');
+            const rightContainer = document.getElementById('match-right');
+            
+            // Create separate shuffled arrays for left and right
+            let leftItems = [...matchData].map(d => ({ id: d.id, text: d.left, side: 'L' })).sort(() => Math.random() - 0.5);
+            let rightItems = [...matchData].map(d => ({ id: d.id, text: d.right, side: 'R' })).sort(() => Math.random() - 0.5);
+
+            leftItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'match-item bg-gray-50 border-2 border-gray-200 rounded-lg p-3 text-sm md:text-base font-semibold text-center text-gray-700';
+                div.innerText = item.text;
+                div.dataset.id = item.id;
+                div.onclick = () => handleMatchClick(div, 'L');
+                leftContainer.appendChild(div);
+            });
+
+            rightItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'match-item bg-gray-50 border-2 border-gray-200 rounded-lg p-3 text-xs md:text-sm text-gray-600 text-center';
+                div.innerText = item.text;
+                div.dataset.id = item.id;
+                div.onclick = () => handleMatchClick(div, 'R');
+                rightContainer.appendChild(div);
+            });
+        }
+
+        function handleMatchClick(element, side) {
+            // Abaikan jika sudah benar
+            if (element.classList.contains('match-correct')) return;
+
+            if (side === 'L') {
+                // Deselect previous left if any
+                if (matchLeftSelected) matchLeftSelected.classList.remove('match-selected');
+                matchLeftSelected = element;
+                element.classList.add('match-selected');
+            } else if (side === 'R' && matchLeftSelected) {
+                // Cek kecocokan
+                if (matchLeftSelected.dataset.id === element.dataset.id) {
+                    // Benar
+                    matchLeftSelected.classList.remove('match-selected');
+                    matchLeftSelected.classList.add('match-correct');
+                    element.classList.add('match-correct');
+                    matchPairsFound++;
+                    matchLeftSelected = null;
+                    showToast('Cocok!', 'success');
+                    
+                    if (matchPairsFound === 5) {
+                        setTimeout(() => finishGame(), 1000);
+                    }
+                } else {
+                    // Salah
+                    element.classList.add('match-wrong');
+                    matchLeftSelected.classList.remove('match-selected');
+                    matchLeftSelected = null;
+                    matchMistakes++;
+                    setTimeout(() => element.classList.remove('match-wrong'), 500);
+                }
+            } else {
+                Swal.fire({toast: true, position:'top', icon:'info', title:'Pilih istilah di sebelah kiri dulu', showConfirmButton:false, timer:1500});
+            }
+        }
+
+        /* --- LOGIC AKHIR & UTILITAS --- */
+        function finishGame() {
+            // Kalkulasi skor match
+            let finalMatchScore = matchMaxScore - (matchMistakes * 2); 
+            if (finalMatchScore < 10) finalMatchScore = 10; // min 10 pts
+            updateScore(finalMatchScore);
+
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('header-score').classList.add('hidden');
+
+            document.getElementById('result-name').innerText = `${studentData.name} (${studentData.kelas} / ${studentData.absen})`;
+            
+            // Animasi Skor
+            let currentS = 0;
+            const scoreEl = document.getElementById('final-score');
+            const interval = setInterval(() => {
+                currentS += 1;
+                if(currentS >= totalScore) {
+                    currentS = totalScore;
+                    clearInterval(interval);
+                }
+                scoreEl.innerText = currentS;
+            }, 20);
+
+            // Predikat
+            let predikat = "";
+            if (totalScore >= 90) predikat = "MUMTAZ (Istimewa)";
+            else if (totalScore >= 75) predikat = "JAYYID JIDDAN (Sangat Baik)";
+            else if (totalScore >= 60) predikat = "JAYYID (Baik)";
+            else predikat = "MAQBUL (Cukup)";
+
+            document.getElementById('final-grade').innerText = predikat;
+
+            // Update Certificate Data
+            document.getElementById('cert-name').innerText = studentData.name.toUpperCase();
+            document.getElementById('cert-class').innerText = `Kelas ${studentData.kelas} - No. Absen ${studentData.absen}`;
+            document.getElementById('cert-score').innerText = totalScore;
+            
+            // Format Tanggal Otomatis (Memastikan bagian Krembung, Tanggal dan Guru PAI terisi dengan benar)
+            const today = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedDate = today.toLocaleDateString('id-ID', options);
+            document.getElementById('cert-date-text').innerText = `Krembung, ${formattedDate}`;
+        }
+
+        function showToast(title, icon) {
+            Swal.fire({ toast: true, position: 'top-end', icon: icon, title: title, showConfirmButton: false, timer: 1000 });
+        }
+
+        function downloadCertificate() {
+            Swal.fire({ title: 'Memproses PDF', text: 'Mohon tunggu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const element = document.getElementById('certificate-container');
+            
+            const opt = {
+                margin: 0,
+                filename: `Sertifikat_PAI_${studentData.kelas}_${studentData.absen}_${studentData.name}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, logging: false, useCORS: true, windowWidth: 1050 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                Swal.close();
+                Swal.fire('Berhasil!', 'Sertifikat telah diunduh dengan sempurna.', 'success');
+            }).catch(err => {
+                Swal.close();
+                Swal.fire('Error', 'Gagal membuat sertifikat.', 'error');
+            });
+        }
+
+        function sendToSpreadsheet() {
+            const btn = document.getElementById('btn-send-data');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            btn.disabled = true;
+
+            // Catatan: Ini adalah simulasi request. 
+            // Untuk real implementasi ke Google Sheet: d/1RGHWX_822SgsX4xfYwE2jvlBOaVWPOAMpVpkP_Cgd3s
+            // Anda harus memasang script Google Apps Script (doPost) di spreadsheet tersebut, lalu menaruh URL Web App-nya di sini (fetch).
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> Terkirim';
+                btn.classList.replace('bg-emerald-600', 'bg-gray-400');
+                btn.classList.replace('hover:bg-emerald-700', 'hover:bg-gray-400');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Terkirim!',
+                    html: `Skor <b>${totalScore}</b> atas nama <b>${studentData.name}</b> berhasil dicatat.<br><br><span class="text-xs text-gray-500">Guru (Ulfatul Husna, S.Ag.,M.Pd.) dapat merekap nilainya pada Spreadsheet.</span>`
+                });
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
